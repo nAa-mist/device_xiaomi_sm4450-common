@@ -1,0 +1,68 @@
+name: One-time import of pinned SM4450 common device tree
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/import-upstream.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-sm4450-common-main
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout nAa-mist repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Fetch and pin exact upstream commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE="$RUNNER_TEMP/upstream-common"
+          mkdir -p "$SOURCE"
+          cd "$SOURCE"
+          git init -q
+          git remote add origin https://github.com/xiaomi-ravelin/android_device_xiaomi_sm4450-common.git
+          git fetch -q --depth=1 origin a476fff00d6149fc988f12f43b73cde1587c7b88
+          git checkout -q --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = a476fff00d6149fc988f12f43b73cde1587c7b88
+          test "$(git ls-files | wc -l)" -eq 57
+          test -f BoardConfigCommon.mk
+          test -f common.mk
+          test -f extract-files.py
+          test -f proprietary-files.txt
+          test -f configs/vintf/manifest_ravelin.xml
+          echo "PINNED SOURCE COMMIT VERIFIED"
+
+      - name: Copy complete upstream source snapshot with modes
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -C "$RUNNER_TEMP/upstream-common" --exclude='.git' -cf - . | tar -xf -
+          git add -A
+          COUNT=$(git diff --cached --name-only | wc -l)
+          test "$COUNT" -eq 57
+          echo "Imported $COUNT source files; original source SHA: a476fff00d6149fc988f12f43b73cde1587c7b88"
+
+      - name: Commit to the nAa-mist source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if ! git diff --cached --quiet; then
+            git commit -m 'Import pinned SM4450 common source snapshot (xiaomi-ravelin a476fff00d6149)'
+            git push origin HEAD:main
+          else
+            echo 'Already current'
+          fi
