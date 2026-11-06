@@ -1,13 +1,19 @@
-# Qualcomm SM4450 / Parrot common LineageOS device tree
+# Qualcomm SM4450 / Parrot common LineageOS 24.0 device tree
 
-This is the shared device tree used by the unofficial Xiaomi `mist` bring-up.
+**nAa-mist canonical source:** `device/xiaomi/sm4450-common`.
 
-**Source baseline:** [xiaomi-ravelin/android_device_xiaomi_sm4450-common](https://github.com/xiaomi-ravelin/android_device_xiaomi_sm4450-common/tree/lineage-24.0), commit `a476fff00d6149fc988f12f43b73cde1587c7b88`.
+Imported **all 57 upstream source files**, including original executable modes,
+from [xiaomi-ravelin/android_device_xiaomi_sm4450-common](https://github.com/xiaomi-ravelin/android_device_xiaomi_sm4450-common/tree/lineage-24.0)
+at pinned source commit `a476fff00d6149fc988f12f43b73cde1587c7b88`.
+The initial import was verified against the upstream Git blob SHAs and modes.
 
-This repository is maintained under **nAa-mist**. The pinned upstream source snapshot will be imported here, preserving source paths and executable modes. Later changes must be committed to **this** repository, not to `mist-bringup`.
+- **Device-specific changes:** [device_xiaomi_mist](https://github.com/nAa-mist/device_xiaomi_mist).
+- **Common vendor extraction destination:** [vendor_xiaomi_sm4450-common](https://github.com/nAa-mist/vendor_xiaomi_sm4450-common).
+- **Stock research only:** [mist-bringup](https://github.com/nAa-mist/mist-bringup).
 
-The upstream configuration contains `ravelin`-specific settings. Do not assume they are verified for `mist`. The device-specific overrides belong in [device_xiaomi_mist](https://github.com/nAa-mist/device_xiaomi_mist).
+Future shared hardware fixes must be committed **here**, not in the research archive.
+The initial upstream tree includes `ravelin`-specific settings (e.g., audio SKU),
+so it is *not* automatically compatible with all `mist` variants.
 
-Stock research and original history: [mist-bringup](https://github.com/nAa-mist/mist-bringup). No proprietary binary blobs or Xiaomi firmware should be committed here.
-
-**Not a boot-validated ROM.**
+The binary proprietary vendor tree, final kernel integration, full ROM compilation,
+and real-device boot test are **not completed**. No firmware binaries are committed.

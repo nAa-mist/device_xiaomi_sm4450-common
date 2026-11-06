@@ -1,0 +1,53 @@
+name: Validate shared SM4450 common source
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check common source structure and interface contract
+        run: |
+          set -eu
+          python3 -m compileall -q extract-files.py setup-makefiles.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          required = [
+              "Android.bp", "BoardConfigCommon.mk", "common.mk",
+              "extract-files.py", "proprietary-files.txt", "init/fstab.qcom",
+              "configs/vintf/manifest_ravelin.xml",
+              "configs/vintf/framework_compatibility_matrix.xml",
+              "configs/modules/modules.load",
+              "configs/modules/modules.load.vendorboot",
+              "configs/modules/modules.load.system_dlkm",
+          ]
+          assert all(Path(p).is_file() for p in required), "missing common source file"
+          board = Path("BoardConfigCommon.mk").read_text()
+          assert "TARGET_BOARD_PLATFORM := parrot" in board
+          assert "TARGET_KERNEL_VERSION := 6.6" in board
+          assert "vendor/xiaomi/sm4450-common/BoardConfigVendor.mk" in board
+          common = Path("common.mk").read_text()
+          assert "vendor/xiaomi/sm4450-common/sm4450-common-vendor.mk" in common
+          entries = [line.strip() for line in Path("proprietary-files.txt").read_text().splitlines()
+                     if line.strip() and not line.lstrip().startswith("#")]
+          assert len(entries) == 995, f"unexpected stock extraction path count: {len(entries)}"
+          for xml in ("configs/vintf/manifest_ravelin.xml",
+                      "configs/vintf/framework_compatibility_matrix.xml"):
+              ET.parse(xml)
+          print(f"SM4450 common source valid; {len(entries)} vendor source references")
+          PY
+      - name: Prevent accidental binary firmware publication
+        run: |
+          if git ls-files | grep -E '\.(img|tgz|so|apk|ko)$'; then
+            echo 'Unexpected binary in common source' >&2
+            exit 1
+          fi
